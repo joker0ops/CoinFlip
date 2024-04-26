@@ -58,6 +58,7 @@ PlayScene::PlayScene(int LevelIndex, QWidget *parent) : QMainWindow(parent)
     // 设置大小和位置
     label->setGeometry(QRect(20, this->height() - 45, 160, 50));
     // 导入游戏数据，绘制初始地图
+    MyCoin* CoinMap[4][4];
     dataConfig LevelData;
     for(int i=0; i<4; i++){
         for(int j=0; j<4; j++){
@@ -66,16 +67,39 @@ PlayScene::PlayScene(int LevelIndex, QWidget *parent) : QMainWindow(parent)
             label->setGeometry(0,0,50,50);
             label->setPixmap(QPixmap(":/res/BoardNode.png"));
             label->setParent(this);
-            label->move(57+i*50, 200+j*50);
+            label->move(57+j*50, 200+i*50);
             MyCoin *coin;
-            if(LevelData.mData[LevelIndex][i][j] == 1)
+            if(LevelData.mData[LevelIndex][i][j] == 1){
                 coin = new MyCoin(":/res/Coin0001.png");
-            else
+            }
+            else{
                 coin = new MyCoin(":/res/Coin0008.png");
+            }
             coin->setParent(this);
-            coin->move(59+i*50, 203+j*50);
+            coin->move(59+j*50, 203+i*50);
+            coin->posX = i;
+            coin->posY = j;
+            coin->Flag = LevelData.mData[LevelIndex][i][j];
+            // 将当前金币记录进游戏地图
+            CoinMap[i][j] = coin;
+            // 用金币类实现点击金币出现翻转特效
+            connect(coin, &MyCoin::clicked, [=](){
+                qDebug() << "The " + QString(coin->posX) + " " + QString(coin->posY) + " has been clicked!";
+                coin->changeFlag();
+                if(i-1>=0){
+                    CoinMap[i-1][j]->changeFlag();
+                }
+//                if(i+1<4){
+//                    CoinMap[i+1][j]->changeFlag();
+//                }
+//                if(j-1>=0)
+//                    CoinMap[i][j-1]->changeFlag();
+//                if(j+1<4)
+//                    CoinMap[i][j+1]->changeFlag();
+            });
         }
     }
+
 }
 
 void PlayScene::paintEvent(QPaintEvent *){

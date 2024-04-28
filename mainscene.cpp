@@ -32,17 +32,23 @@ MainScene::MainScene(QWidget *parent): QMainWindow(parent), ui(new Ui::MainScene
     LevelSelectWindow *levelwindow = new LevelSelectWindow;
     connect(StartBtn, &MyPushButton::clicked, this, [=](){
         StartBtn->jump1();
+        QSound *StartSound = new QSound(":/res/TapButtonSound.wav");
+        StartSound->play();
         StartBtn->jump2();
         // qDebug() << "点击了开始按钮";
         // 添加延时器使得用户可以在看到开始按钮跳动后跳转到关卡选择页面，380是延时，this代表针对当前对象进行操作
         QTimer::singleShot(380, this, [=](){
             // 关闭当前页面
             this->hide();
+            // 设置场景的位置为当前位置
+            levelwindow->setGeometry(this->geometry());
             // 打开新页面
             levelwindow->show();
         });
     });
     connect(levelwindow, &LevelSelectWindow::BackBtnPressed, this, [=](){
+        // 设置当前场景位置为上一个场景的位置
+        this->setGeometry(levelwindow->geometry());
         this->show();
     });
 }

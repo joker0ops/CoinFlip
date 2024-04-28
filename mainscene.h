@@ -2,6 +2,8 @@
 #define MAINSCENE_H
 
 #include <QMainWindow>
+// 在pro文件中添加multimedia模块后方可添加此头文件
+#include <QSound>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainScene; }

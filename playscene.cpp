@@ -1,11 +1,13 @@
 #include "playscene.h"
 #include "mypushbutton.h"
+#include <QPropertyAnimation>
 #include "dataconfig.h"
 #include "mycoin.h"
 #include <QString>
 #include <QTimer>
 #include <QDebug>
 #include <QLabel>
+#include <QSound>
 #include <QMenuBar>
 #include <QPainter>
 
@@ -35,6 +37,9 @@ PlayScene::PlayScene(int LevelIndex, QWidget *parent) : QMainWindow(parent)
     BackBtn->move((this->width()-BackBtn->width()), (this->height()-BackBtn->height()));
     // 点击返回
     connect(BackBtn, &MyPushButton::clicked, this, [=](){
+        // 添加音效
+        QSound *BackSound = new QSound(":/res/BackButtonSound.wav", this);
+        BackSound->play();
         // qDebug() << "点击了返回按钮";
         // 触发自定义信号返回主界面
         // 延时200ms进行触发
@@ -57,8 +62,15 @@ PlayScene::PlayScene(int LevelIndex, QWidget *parent) : QMainWindow(parent)
     label->setText(str);
     // 设置大小和位置
     label->setGeometry(QRect(20, this->height() - 45, 160, 50));
+    // 提前创建好胜利显示图片，等待胜利信号发出时调用
+    QLabel* WinLabel = new QLabel;
+    QPixmap WinPix;
+    WinPix.load(":/res/LevelCompletedDialogBg.png");
+    WinLabel->setGeometry(0, 0, WinPix.width(), WinPix.height());
+    WinLabel->setPixmap(WinPix);
+    WinLabel->setParent(this);
+    WinLabel->move((this->width()-WinPix.width())*0.5, -WinPix.height());
     // 导入游戏数据，绘制初始地图
-    MyCoin* CoinMap[4][4];
     dataConfig LevelData;
     for(int i=0; i<4; i++){
         for(int j=0; j<4; j++){
@@ -82,24 +94,52 @@ PlayScene::PlayScene(int LevelIndex, QWidget *parent) : QMainWindow(parent)
             coin->Flag = LevelData.mData[LevelIndex][i][j];
             // 将当前金币记录进游戏地图
             CoinMap[i][j] = coin;
-            // 用金币类实现点击金币出现翻转特效
+            // 用金币类实现点击金币出现翻转特效，注意这里要用posX和posY来对坐标进行维护，因为构造函数只执行一次，而槽函数在过程中要执行多次
             connect(coin, &MyCoin::clicked, [=](){
-                qDebug() << "The " + QString(coin->posX) + " " + QString(coin->posY) + " has been clicked!";
+                qDebug() << "The " + QString::number(coin->posX+1) + " " + QString::number(coin->posY+1) + " has been clicked!";
                 coin->changeFlag();
-                if(i-1>=0){
-                    CoinMap[i-1][j]->changeFlag();
-                }
-//                if(i+1<4){
-//                    CoinMap[i+1][j]->changeFlag();
-//                }
-//                if(j-1>=0)
-//                    CoinMap[i][j-1]->changeFlag();
-//                if(j+1<4)
-//                    CoinMap[i][j+1]->changeFlag();
+                QTimer::singleShot(300, this, [=](){
+                    if(coin->posX+1<4)
+                        CoinMap[coin->posX+1][coin->posY]->changeFlag();
+                    if(coin->posX-1>=0)
+                        CoinMap[coin->posX-1][coin->posY]->changeFlag();
+                    if(coin->posY+1<4)
+                        CoinMap[coin->posX][coin->posY+1]->changeFlag();
+                    if(j-1>=0)
+                        CoinMap[coin->posX][coin->posY-1]->changeFlag();
+                    // 维护胜利标志，需要每次点击后重置标志的值，不能放到成员函数中
+                    bool WinFlag = true;
+                    for(int i=0; i<4; i++){
+                        for(int j=0; j<4; j++){
+                            if(CoinMap[i][j]->Flag == false){
+                                WinFlag = false;
+                                break;
+                            }
+                        }
+                        if(!WinFlag)
+                            break;
+                    }
+                    if(WinFlag){
+                        for(int i=0; i<4; i++){
+                            for(int j=0; j<4; j++){
+                                // 将所有按钮的状态标记为胜利，不可再点击
+                                CoinMap[i][j]->isWin = true;
+                            }
+                        }
+                        qDebug() << "胜利!!!";
+                        QSound *WinSound = new QSound(":/res/LevelWinSound.wav", this);
+                        WinSound->play();
+                        QPropertyAnimation *animation = new QPropertyAnimation(WinLabel, "geometry");
+                        animation->setDuration(1000);
+                        animation->setStartValue(QRect(WinLabel->x(), WinLabel->y(), WinLabel->width(), WinLabel->height()));
+                        animation->setEndValue(QRect(WinLabel->x(), WinLabel->y()+114, WinLabel->width(), WinLabel->height()));
+                        animation->setEasingCurve(QEasingCurve::OutBounce);
+                        animation->start();
+                    }
+                });
             });
         }
     }
-
 }
 
 void PlayScene::paintEvent(QPaintEvent *){

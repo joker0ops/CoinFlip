@@ -22,6 +22,8 @@ public:
     int max = 8;
     // 判断是否在翻转动画的过程中，如果是的话则禁用其他点击事件
     bool isAnimation = false;
+    // 添加胜利标志，如果关卡成功通过则禁用所有金币的点击事件
+    bool isWin = false;
     void mousePressEvent(QMouseEvent *e);
 signals:
 

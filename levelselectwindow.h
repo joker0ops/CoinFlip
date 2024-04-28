@@ -2,6 +2,7 @@
 #define LEVELSELECTWINDOW_H
 
 #include <QMainWindow>
+#include <QSound>
 #include "playscene.h"
 
 class LevelSelectWindow : public QMainWindow

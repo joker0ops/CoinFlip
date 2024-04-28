@@ -1,6 +1,7 @@
 #include "mycoin.h"
 #include <QTimer>
 #include <QDebug>
+#include <QSound>
 
 MyCoin::MyCoin(QString Img){
     QPixmap pixmap;
@@ -51,11 +52,15 @@ MyCoin::MyCoin(QString Img){
 
 void MyCoin::changeFlag(){
     if(this->Flag){
+        QSound *FlipSound = new QSound(":/res/ConFlipSound.wav", this);
+        FlipSound->play();
         timer1->start(30);
         this->isAnimation = true;
         this->Flag = false;
     }
     else{
+        QSound *FlipSound = new QSound(":/res/ConFlipSound.wav", this);
+        FlipSound->play();
         timer2->start(30);
         this->isAnimation = true;
         this->Flag = true;
@@ -63,7 +68,7 @@ void MyCoin::changeFlag(){
 }
 
 void MyCoin::mousePressEvent(QMouseEvent *e){
-    if(this->isAnimation)
+    if(this->isAnimation || isWin == true)
         return;
     else
         return QPushButton::mousePressEvent(e);
